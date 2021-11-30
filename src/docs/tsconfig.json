@@ -1,0 +1,19 @@
+{
+  "extends": "../node-tsconfig.json",
+  "ts-node": {
+    "scope": true
+  },
+  "compilerOptions": {
+    "jsx": "react"
+  },
+  "references": [
+    {
+      "path": "../webpack-static-site"
+    }
+  ],
+  "include": [
+    "**/*.json",
+    "**/*.tsx",
+    "**/*.ts"
+  ]
+}

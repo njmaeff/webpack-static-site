@@ -1,0 +1,26 @@
+@media print {
+    body {
+        color: black;
+        background: white none;
+        font-size: 12pt;
+    }
+
+    nav {
+        display: none;
+    }
+
+    #wrapper, main {
+        width: 80%;
+        border: 0;
+        margin: 1in;
+        padding: 0;
+    }
+
+    a:link, a:visited {
+        color: black;
+        text-decoration: underline;
+        font-weight: bold;
+        background-color: white;
+    }
+}
+

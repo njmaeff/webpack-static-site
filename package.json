@@ -1,0 +1,20 @@
+{
+  "name": "root",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "src/*",
+    "private"
+  ],
+  "scripts": {
+    "g:serve": "cd $INIT_CWD && browser-sync --no-ghost-mode -w",
+    "build": "tsc -b",
+    "watch": "tsc -b -w",
+    "clean": "tsc -b --clean"
+  },
+  "devDependencies": {
+    "@types/node": "^16.9.1",
+    "browser-sync": "^2.27.5",
+    "typescript": "4.4.3"
+  }
+}

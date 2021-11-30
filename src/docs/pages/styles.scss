@@ -1,0 +1,70 @@
+@use "~@njmaeff/webpack-static-site/scss/reset";
+@use "~@njmaeff/webpack-static-site/scss/print";
+
+@use "variables";
+
+/* https://fonts.google.com/specimen/Rubik?query=rubik */
+@import url('https://fonts.googleapis.com/css2?family=Rubik&display=swap');
+
+
+:root {
+    font-family: 'Rubik', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    max-width: 960px;
+    min-height: 100vh;
+    background-color: variables.$color-light;
+    color: variables.$color-dark;
+    margin: 0 auto;
+
+    /* https://stackoverflow.com/questions/46167604/ios-html-disable-double-tap-to-zoom */
+    touch-action: manipulation;
+}
+
+h1 {
+    font-size: 4rem;
+    margin: 1rem 0;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+h3 {
+    font-size: 1.2rem;
+    margin: 1rem 0;
+}
+
+li {
+    margin: 0.2rem 1.5rem;
+}
+
+a {
+    text-align: center;
+    color: variables.$color-dark;
+
+    &:visited, &:hover, &:active {
+        color: inherit;
+    }
+
+}
+
+p, textarea, input {
+    font-size: 0.8rem;
+    margin: 0.2rem 0.5rem;
+    line-height: 1.3rem;
+    background-color: variables.$color-light;
+    color: variables.$color-dark;
+}
+
+img {
+    max-width: 100%;
+    width: 80%;
+    text-align: center;
+}

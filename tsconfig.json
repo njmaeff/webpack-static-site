@@ -1,0 +1,9 @@
+{
+  "extends": "./src/node-tsconfig.json",
+  "references": [
+    {
+      "path": "src/webpack-static-site"
+    }
+  ],
+  "include": []
+}
