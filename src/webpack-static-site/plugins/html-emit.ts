@@ -3,7 +3,7 @@ import * as path from "path";
 import {html as beautify_html} from "js-beautify";
 import VirtualModulesPlugin from "webpack-virtual-modules";
 import {getRelativeFiles} from "../util/file";
-import * as vm from "vm";
+import {NodeVM} from "vm2";
 import {Formatter} from "./types";
 
 const PLUGIN_NAME = "html-emit-plugin";
@@ -167,21 +167,17 @@ export class HTMLEmitPlugin {
  * @param assetPath
  */
 export const renderStaticPage = (src: string, assetPath: string) => {
-    let mod = {
-        exports: {default: ""},
-    };
-    vm.runInContext(
-        src,
-        vm.createContext({
-            require,
-            module: mod,
-            exports: mod.exports,
+    const vm = new NodeVM({
+        require: {
+            external: true,
+            builtin: ["path", "stream"]
+        },
+        sandbox: {
             SC_STATIC_ASSET_PATH: assetPath,
-            process,
-        })
-    );
+        }
+    });
 
-    return mod.exports.default;
+    return vm.run(src, assetPath)
 };
 
 /**

@@ -26,6 +26,7 @@ const defaultConfigTemplate = ({
         entry: {},
         context: root,
         mode: "production",
+        target: "node",
         node: {
             __dirname: true,
         },
@@ -34,12 +35,10 @@ const defaultConfigTemplate = ({
             assetModuleFilename: `[path][name][ext]`,
             publicPath: "/",
             libraryTarget: "commonjs2",
+            libraryExport: "default"
         },
         resolve: {
             extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
-            fallback: {
-                path: resolve("path-browserify"),
-            },
         },
         module: {
             rules: [
