@@ -1,13 +1,14 @@
 {
   "name": "@njmaeff/webpack-static-site",
-  "version": "0.0.1-beta.0",
+  "version": "0.0.1-beta.1",
   "files": [
     "make-config.*",
     "util",
     "loader",
     "components",
     "plugins",
-    "scss"
+    "scss",
+    "global.d.ts"
   ],
   "dependencies": {
     "@babel/preset-env": "^7.16.4",
