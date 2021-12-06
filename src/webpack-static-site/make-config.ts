@@ -11,6 +11,7 @@ export interface DefaultConfigTemplateParams {
     outputPath?: string;
     root?: string;
     copy?: CopyPluginOptions;
+    emotionJS?: boolean
     formatter?: Formatter;
     pageExtension?: string,
 }
@@ -19,13 +20,17 @@ const defaultConfigTemplate = ({
                                    root = path.join(process.cwd(), "pages"),
                                    outputPath = path.join(process.cwd(), "dist"),
                                    copy,
+                                   emotionJS = false,
                                    formatter = "js-minify",
                                    pageExtension = '.page.tsx',
                                }: DefaultConfigTemplateParams = {}) =>
     ({
         entry: {},
         context: root,
-        mode: "production",
+        mode: "development",
+        // devtool: "eval-source-map",
+        devtool: false,
+        target: "node",
         node: {
             __dirname: true,
         },
@@ -37,9 +42,6 @@ const defaultConfigTemplate = ({
         },
         resolve: {
             extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
-            fallback: {
-                path: resolve("path-browserify"),
-            },
         },
         module: {
             rules: [
@@ -125,6 +127,7 @@ const defaultConfigTemplate = ({
             new HTMLEmitPlugin({
                 pageExtension,
                 formatter,
+                emotionJS,
                 useStaticTransform: true,
             }),
             new CopyPlugin({

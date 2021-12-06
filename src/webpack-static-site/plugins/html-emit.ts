@@ -3,8 +3,8 @@ import * as path from "path";
 import {html as beautify_html} from "js-beautify";
 import VirtualModulesPlugin from "webpack-virtual-modules";
 import {getRelativeFiles} from "../util/file";
-import * as vm from "vm";
 import {Formatter} from "./types";
+import {NodeVM} from "vm2";
 
 const PLUGIN_NAME = "html-emit-plugin";
 
@@ -31,7 +31,7 @@ export class HTMLEmitPlugin {
                 // create runtime module
                 virtualModules.writeModule(
                     fileName,
-                    createStaticModule({file: entry.base})
+                    this.options.emotionJS ? createStaticModuleWithEmotion({file: entry.base}) : createStaticModule({file: entry.base})
                 );
                 entries[path.join(entry.dir, nameWithoutExtension)] = {
                     import: [fileName],
@@ -150,6 +150,7 @@ export class HTMLEmitPlugin {
             pageExtension: string,
             useStaticTransform: boolean;
             formatter: Formatter;
+            emotionJS: boolean
         }
     ) {
     }
@@ -170,16 +171,32 @@ export const renderStaticPage = (src: string, assetPath: string) => {
     let mod = {
         exports: {default: ""},
     };
-    vm.runInContext(
-        src,
-        vm.createContext({
-            require,
+    const vm = new NodeVM({
+        require: {
+            external: true,
+            builtin: ["*"]
+        },
+        sandbox: {
+            // require,
             module: mod,
             exports: mod.exports,
             SC_STATIC_ASSET_PATH: assetPath,
-            process,
-        })
-    );
+            // process,
+        }
+    });
+
+    vm.run(src, assetPath)
+
+    // vm.runInContext(
+    //     src,
+    //     vm.createContext({
+    //         require,
+    //         module: mod,
+    //         exports: mod.exports,
+    //         SC_STATIC_ASSET_PATH: assetPath,
+    //         process,
+    //     })
+    // );
 
     return mod.exports.default;
 };
@@ -194,5 +211,13 @@ export const createStaticModule = ({file}) => {
     return [
         `import {default as App} from ${fileName};`,
         `export default require("@njmaeff/webpack-static-site/components/render-static").renderStatic(App);`,
+    ].join("\n");
+};
+
+export const createStaticModuleWithEmotion = ({file}) => {
+    const fileName = JSON.stringify(`./${file}`);
+    return [
+        `import {default as App} from ${fileName};`,
+        `export default require("@njmaeff/webpack-static-site/components/render-static-emotion").renderStaticEmotion(App);`,
     ].join("\n");
 };
