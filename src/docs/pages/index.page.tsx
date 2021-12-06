@@ -7,7 +7,7 @@ import {css} from "@njmaeff/webpack-static-site/util/css";
 
 export default () => {
 
-    return <Page title={'Docs | Index'}>
+    return <Page heading={'Docs | Index'}>
         {/*add extra tags to the head*/}
         <Head>
             <style>

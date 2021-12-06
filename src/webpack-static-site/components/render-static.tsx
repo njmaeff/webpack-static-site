@@ -6,7 +6,7 @@ export const renderStatic = (Component) => {
     const doc = renderToStaticMarkup(<Component/>);
     const {head, bodyAttrs, htmlAttrs} = renderHeadStatic();
 
-    return `
+    return SC_FORMAT(`
     <!DOCTYPE html>
     <html ${htmlAttrs}>
         <head>
@@ -16,5 +16,5 @@ export const renderStatic = (Component) => {
           ${doc}
         </body>
     </html>
-`;
+`);
 };

@@ -5,7 +5,7 @@ import {Link} from "../../webpack-static-site/components/link";
 import Styles from "./styles.scss"
 
 export interface PageProps {
-    title: string;
+    heading: string;
     charSet?: string;
     lang?: string;
 }
@@ -27,7 +27,7 @@ export const Page: React.FC<PageProps> = ({
                     name="viewport"
                     content="width=device-width, initial-scale=1.0, maximum-scale=1"
                 />
-                <title>{props.title}</title>
+                <title>{props.heading}</title>
                 <Link type={'text/css'} rel="stylesheet" href={Styles}/>
             </Head>
             {children}

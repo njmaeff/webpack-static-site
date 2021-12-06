@@ -49,3 +49,4 @@ module "*.css" {
 }
 
 const SC_STATIC_ASSET_PATH: string;
+const SC_FORMAT: (src: string) => string;

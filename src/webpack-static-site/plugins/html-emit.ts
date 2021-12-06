@@ -5,6 +5,7 @@ import VirtualModulesPlugin from "webpack-virtual-modules";
 import {getRelativeFiles} from "../util/file";
 import {NodeVM} from "vm2";
 import {Formatter} from "./types";
+import prettier from "prettier";
 
 const PLUGIN_NAME = "html-emit-plugin";
 
@@ -14,30 +15,13 @@ export class HTMLEmitPlugin {
         virtualModules.apply(compiler);
 
         compiler.hooks.afterEnvironment.tap(PLUGIN_NAME, () => {
-            const context = compiler.options.context;
-            const pageExtension = this.options.pageExtension;
-            const relativeEntryFiles = getRelativeFiles(
-                context,
-                [`**/*${pageExtension}`]
-            );
-            const entries = {};
-            for (const file of relativeEntryFiles) {
+            const pages = this.createEntryFromFiles(virtualModules, compiler.options.context, this.options.pageExtension, this.options.emotionJS
+                ? createStaticModuleWithEmotion
+                : createStaticModule
+            )
+            const phpPages = this.createEntryFromFiles(virtualModules, compiler.options.context, this.options.phpExtension, createStaticPHPModuleWithEmotion)
 
-                const entry = path.parse(file)
-                const nameWithoutExtension = entry.base.replace(pageExtension, "");
-                const name = `virtual_page-${entry.base}`;
-                const fileName = `./${path.join(path.dirname(file), name)}`;
-
-                // create runtime module
-                virtualModules.writeModule(
-                    fileName,
-                    createStaticModule({file: entry.base})
-                );
-                entries[path.join(entry.dir, nameWithoutExtension)] = {
-                    import: [fileName],
-                };
-            }
-
+            const entries = {...pages, ...phpPages}
             Object.assign(compiler.options.entry, entries);
             this.entries = entries;
 
@@ -47,16 +31,18 @@ export class HTMLEmitPlugin {
             compilation.hooks.processAssets.tapAsync(
                 PLUGIN_NAME,
                 async (assets, cb) => {
-                    for (const name of Object.keys(this.entries)) {
-                        const entry = name + ".js";
-                        const asset = assets[entry];
+                    this.prettierConfig = await prettier.resolveConfig(process.cwd());
+
+                    for (const [name, entry] of Object.entries(this.entries)) {
+                        const entryFile = name + ".js";
+                        const asset = assets[entryFile];
 
                         // so we don't emit the react javascript file
-                        delete assets[entry];
+                        delete assets[entryFile];
 
                         const chunk = compilation.namedChunks.get(name);
                         const currentHash = chunk.renderedHash;
-                        const lastHash = this.hashes.get(entry) ?? "";
+                        const lastHash = this.hashes.get(entryFile) ?? "";
 
                         // skip rending the source if the hashes match
                         if (lastHash === currentHash) {
@@ -64,7 +50,7 @@ export class HTMLEmitPlugin {
                         }
 
                         // transform and emit the asset
-                        this.hashes.set(entry, currentHash);
+                        this.hashes.set(entryFile, currentHash);
                         const src = asset.source() as string;
                         try {
                             const result = await this.transformAsset(
@@ -72,11 +58,11 @@ export class HTMLEmitPlugin {
                                 path.join(
                                     compilation.options.output
                                         .publicPath as string,
-                                    entry
+                                    entryFile
                                 ),
                             );
                             compilation.emitAsset(
-                                name + ".html",
+                                name + entry._sc_extension,
                                 new webpack.sources.RawSource(result)
                             );
                         } catch (e) {
@@ -87,6 +73,35 @@ export class HTMLEmitPlugin {
                 }
             );
         });
+    };
+
+    private createEntryFromFiles(virtualModules, context, pageExtension, runtime) {
+        const files = getRelativeFiles(
+            context,
+            [`**/*${pageExtension}`]
+        );
+        const entries = {};
+        for (const file of files) {
+
+            const entry = path.parse(file)
+            const nameWithoutExtension = entry.base.replace(pageExtension, "");
+            const name = `virtual_page-${entry.base}`;
+            const fileName = `./${path.join(path.dirname(file), name)}`;
+
+            // create runtime module
+            virtualModules.writeModule(
+                fileName,
+                runtime({file: entry.base})
+            );
+
+            entries[path.join(entry.dir, nameWithoutExtension)] = {
+                _sc_extension: pageExtension === this.options.pageExtension ? '.html' : '.php',
+                import: [fileName],
+            };
+        }
+
+        return entries;
+
     };
 
     private formatBeautify(src: string) {
@@ -113,14 +128,16 @@ export class HTMLEmitPlugin {
         });
     }
 
-    private async formatPrettier(src: string) {
-        const prettier = await import("prettier");
-        const options =
-            this.prettierConfig ??
-            (await prettier.resolveConfig(process.cwd()));
+    private formatPrettier(src: string, {
+        parser = 'html',
+        plugins = []
+    } = {}) {
+
+        const options = this.prettierConfig;
         const formattedHTML = prettier.format(src, {
             ...options,
-            parser: "html",
+            plugins: [...plugins, ...(options.plugins ?? [])],
+            parser,
         });
         this.prettierConfig = options;
         return formattedHTML;
@@ -130,25 +147,55 @@ export class HTMLEmitPlugin {
         src: string,
         assetPath: string,
     ) {
-        let rawHtml = renderStaticPage(src, assetPath);
+        return this.renderStaticPage(src, assetPath);
+    }
+
+    /**
+     * This is how we transform the react code into static html. We provide a
+     * global variable SC_STATIC_ASSET_PATH so our special Link component can
+     * use the correct relative path for sass styles.
+     * @param src
+     * @param assetPath
+     */
+    private renderStaticPage(src: string, assetPath: string) {
+
 
         // special replacement so we can add comments in our html using the
         // special react Comment component
-        const html = rawHtml
-            .replace(/<sc-react-comment>/g, "")
-            .replace(/<\/sc-react-comment>/g, "");
+        const formatter = (src) => {
+            let html = src
+                .replace(/<sc-react-comment>/g, "")
+                .replace(/<\/sc-react-comment>/g, "");
 
-        if (this.options.formatter === "js-minify") {
-            return this.formatBeautify(html);
-        } else {
-            return this.formatPrettier(html);
+            if (this.options.formatter === "js-minify") {
+                return this.formatBeautify(html);
+            } else {
+                return this.formatPrettier(html);
+            }
         }
-    }
+
+        const vm = new NodeVM({
+            require: {
+                external: true,
+                builtin: ["path", "stream", "buffer", "events"],
+                mock: {
+                    events: require("events"),
+                }
+            },
+            sandbox: {
+                SC_STATIC_ASSET_PATH: assetPath,
+                SC_FORMAT: (src) => formatter(src)
+            },
+        });
+        return vm.run(src, assetPath)
+    };
 
     constructor(
         private options: {
             pageExtension: string,
+            phpExtension: string,
             useStaticTransform: boolean;
+            emotionJS: boolean;
             formatter: Formatter;
         }
     ) {
@@ -156,29 +203,9 @@ export class HTMLEmitPlugin {
 
     private prettierConfig: any;
     private hashes = new Map<string, string>();
-    private entries: { [key: string]: string };
+    private entries: { [key: string]: { import: string, _sc_extension: '.php' | '.html' } };
 }
 
-/**
- * This is how we transform the react code into static html. We provide a
- * global variable SC_STATIC_ASSET_PATH so our special Link component can use
- * the correct relative path for sass styles.
- * @param src
- * @param assetPath
- */
-export const renderStaticPage = (src: string, assetPath: string) => {
-    const vm = new NodeVM({
-        require: {
-            external: true,
-            builtin: ["path", "stream"]
-        },
-        sandbox: {
-            SC_STATIC_ASSET_PATH: assetPath,
-        }
-    });
-
-    return vm.run(src, assetPath)
-};
 
 /**
  * Using the webpack virtual module plugin, we can import our runtime code and
@@ -190,5 +217,21 @@ export const createStaticModule = ({file}) => {
     return [
         `import {default as App} from ${fileName};`,
         `export default require("@njmaeff/webpack-static-site/components/render-static").renderStatic(App);`,
+    ].join("\n");
+};
+
+export const createStaticModuleWithEmotion = ({file}) => {
+    const fileName = JSON.stringify(`./${file}`);
+    return [
+        `import {default as App} from ${fileName};`,
+        `export default require("@njmaeff/webpack-static-site/components/render-static-emotion").renderStaticEmotion(App);`,
+    ].join("\n");
+};
+
+export const createStaticPHPModuleWithEmotion = ({file}) => {
+    const fileName = JSON.stringify(`./${file}`);
+    return [
+        `import * as App from ${fileName};`,
+        `export default require("@njmaeff/webpack-static-site/components/render-static-php").default(App);`,
     ].join("\n");
 };

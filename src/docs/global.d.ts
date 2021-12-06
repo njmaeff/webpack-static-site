@@ -1,1 +1,1 @@
-import "../webpack-static-site/global"
+import "@njmaeff/webpack-static-site/global"

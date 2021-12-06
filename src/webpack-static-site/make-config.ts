@@ -11,21 +11,28 @@ export interface DefaultConfigTemplateParams {
     outputPath?: string;
     root?: string;
     copy?: CopyPluginOptions;
+    emotionJS?: boolean
     formatter?: Formatter;
     pageExtension?: string,
+    phpExtension?: string
 }
 
 const defaultConfigTemplate = ({
                                    root = path.join(process.cwd(), "pages"),
                                    outputPath = path.join(process.cwd(), "dist"),
                                    copy,
+                                   emotionJS = false,
                                    formatter = "js-minify",
                                    pageExtension = '.page.tsx',
+                                   phpExtension = '.php.tsx',
                                }: DefaultConfigTemplateParams = {}) =>
     ({
         entry: {},
         context: root,
         mode: "production",
+        // mode: 'development',
+        // devtool: "eval-source-map",
+        // devtool: false,
         target: "node",
         node: {
             __dirname: true,
@@ -52,6 +59,12 @@ const defaultConfigTemplate = ({
                                     resolve("@babel/preset-env"),
                                     resolve("@babel/preset-react"),
                                     resolve("@babel/preset-typescript"),
+                                    ...(emotionJS ? [
+                                        [resolve("@emotion/babel-preset-css-prop"), {
+                                            autoLabel: "always",
+                                            labelFormat: "[local]",
+                                        }]
+                                    ] : []),
                                 ],
                             },
                         },
@@ -123,7 +136,9 @@ const defaultConfigTemplate = ({
         plugins: [
             new HTMLEmitPlugin({
                 pageExtension,
+                phpExtension,
                 formatter,
+                emotionJS,
                 useStaticTransform: true,
             }),
             new CopyPlugin({
