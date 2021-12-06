@@ -1453,7 +1453,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@njmaeff/webpack-static-site@workspace:src/webpack-static-site":
+"@njmaeff/webpack-static-site@workspace:*, @njmaeff/webpack-static-site@workspace:src/webpack-static-site":
   version: 0.0.0-use.local
   resolution: "@njmaeff/webpack-static-site@workspace:src/webpack-static-site"
   dependencies:
@@ -3097,6 +3097,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "docs@workspace:src/docs"
   dependencies:
+    "@njmaeff/webpack-static-site": "workspace:*"
     react: ^17.0.2
     react-dom: ^17.0.2
     ts-node: ^10.4.0
