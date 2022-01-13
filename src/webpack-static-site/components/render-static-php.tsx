@@ -5,19 +5,18 @@ import {
     cache,
     renderToStaticMarkupEmotion
 } from "./render-static-markup-emotion";
-import {PHPProps, PHPTemplate} from "./types"
+import {PHPMeta, PHPProps} from "./types"
 import snakeCase from "lodash/snakeCase";
 import camelCase from "lodash/camelCase";
 import startCase from "lodash/startCase";
+import path from "path";
 
 export const toPascalCase = (str) => {
     return startCase(camelCase(str)).replace(/ /g, '');
 };
 
-export const makePHPDataClass = (name: string, props) => {
+export const makePHPDataClass = (name: string, props, dataClassName: string) => {
     let phpConstructorProps = []
-    let phpProps = [];
-    let phpAssignments = [];
 
     for (const [key, value] of Object.entries(props)) {
 
@@ -35,25 +34,17 @@ export const makePHPDataClass = (name: string, props) => {
         }
 
         phpConstructorProps.push(
-            `       ${type} $${key} = ${JSON.stringify(value)}`
-        )
-        phpProps.push(
-            `   public ${type} $${key};`
-        )
-
-        phpAssignments.push(
-            `      $this->${key} = $${key};`
+            `       public ${type} $${key} = ${JSON.stringify(value)}`
         )
 
     }
     return [
-        `class ${toPascalCase(name)}Data {`,
-        ...phpProps,
+        `class ${dataClassName}`,
+        `{`,
         `   public function __construct(`,
         `${phpConstructorProps.join(',\n')}`,
         `   )`,
         `   {`,
-        ...phpAssignments,
         `   }`,
         `}\n`
     ]
@@ -70,10 +61,10 @@ export const makeDestructureProps = (props: PHPProps) => {
 
 };
 
-export const makePHPFunctionWrapper = (name: string, props: PHPProps, template: string) => {
+export const makePHPFunctionWrapper = (name: string, props: PHPProps, template: string, dataName: string) => {
 
     return [
-        `function ${snakeCase(name)} (${toPascalCase(name)}Data $data): string`,
+        `function ${snakeCase(name)} (${dataName} $data): string`,
         `{`,
         `   ${makeDestructureProps(props)} = get_object_vars($data);\n`,
         `   return <<<"EOL"`,
@@ -83,34 +74,46 @@ export const makePHPFunctionWrapper = (name: string, props: PHPProps, template: 
     ]
 };
 
-export const renderStaticPHP = (templates: { [key: string]: PHPTemplate }) => {
+export const renderStaticPHP = ({
+                                    default: meta,
+                                    ...templates
+                                }: { default: PHPMeta }) => {
     const {
         extractCriticalToChunks,
         constructStyleTagsFromChunks
     } = createEmotionServer(cache)
+    let [moduleName] = meta.namespaceBase?.slice(-1)
 
+    if (moduleName) {
+        moduleName = toPascalCase(moduleName);
+    } else {
+        moduleName = 'DataClass'
+    }
+
+    const namespace = [meta.namespaceBase?.join('\\'), path.parse(SC_STATIC_ASSET_PATH).name].join('\\');
     const phpFile = [
-        `<?php`,
-        // `namespace ${SC_STATIC_ASSET_PATH.replace(/\//g, '\\')};`
+        `<?php\n`,
+        ...(namespace ? [`namespace ${namespace};\n`] : [])
     ]
+    phpFile.push(
+        ...makePHPDataClass(moduleName, meta.props, moduleName)
+    )
 
-    for (const [name, Component] of Object.entries(templates)) {
-        phpFile.push(
-            ...makePHPDataClass(name, Component.props)
-        )
+    let props = {}
+    for (const key of Object.keys(meta.props)) {
+        props[key] = `$${key}`
+    }
 
-        let props = {}
-        for (const key of Object.keys(Component.props)) {
-            props[key] = `$${key}`
-        }
+    for (const [name, Component] of Object.entries(templates) as [string, React.FC][]) {
+
         const html = renderToStaticMarkupEmotion(
             () => <Component {...props}/>
-        )
+        );
         const chunks = extractCriticalToChunks(html)
         const styles = constructStyleTagsFromChunks(chunks)
 
         let template: string
-        if (Component.includeDocType) {
+        if (meta.includeDocType) {
             const {head, bodyAttrs, htmlAttrs} = renderHeadStatic();
             template = `
         <!DOCTYPE html>
@@ -132,7 +135,7 @@ export const renderStaticPHP = (templates: { [key: string]: PHPTemplate }) => {
         }
 
         phpFile.push(
-            ...makePHPFunctionWrapper(name, props, SC_FORMAT(template))
+            ...makePHPFunctionWrapper(name, props, SC_FORMAT(template), moduleName)
         )
     }
     return phpFile.join('\n')

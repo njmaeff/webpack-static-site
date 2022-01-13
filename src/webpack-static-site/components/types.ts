@@ -1,10 +1,8 @@
-import React from "react";
 import {Primitive} from "type-fest"
 
 export type PHPProps = Record<string, Primitive>;
-export type PHPTemplate<T extends PHPProps = any> =
-    React.FC<T>
-    & {
+export type PHPMeta<T extends PHPProps = any> = {
     props?: T
-    includeDocType?: boolean
+    includeDocType?: boolean,
+    namespaceBase?: string[]
 }
