@@ -1,4 +1,4 @@
-FROM php:7.4-apache
+FROM php:8.1-apache
 
 # Install packages under Debian
 RUN pecl install xdebug
@@ -8,10 +8,6 @@ COPY conf/ /usr/local/etc/php/conf.d/
 
 RUN cd /usr/local/lib/php/extensions \
     && echo "zend_extension=$(find "$(cd ..; pwd)" -name xdebug.so)" >> /usr/local/etc/php/conf.d/xdebug.ini
-# Since this Dockerfile extends the official Docker image `wordpress`,
-# and since `wordpress`, in turn, extends the official Docker image `php`,
-# the helper script docker-php-ext-enable (defined for image `php`)
-# works here, and we can use it to enable xdebug:
 
 COPY install-composer.sh /tmp/
 RUN bash /tmp/install-composer.sh

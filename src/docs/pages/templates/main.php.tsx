@@ -1,17 +1,20 @@
 import React from "react";
 import {Page} from "../pageTemplate";
 import {css} from "@emotion/react";
-import {PHPMeta,} from "@njmaeff/webpack-static-site/components/types";
+import {
+    PHPMeta,
+    PHPTemplate,
+} from "@njmaeff/webpack-static-site/components/types";
 
 type PageProps = {
     main;
     heading;
 }
 
-export const PageTemplate: React.FC<PageProps> = ({
-                                                      main,
-                                                      heading
-                                                  }) => {
+export const PageTemplate: PHPTemplate<PageProps> = ({
+                                                         main,
+                                                         heading
+                                                     }) => {
     return <Page heading={'Docs | Index'}>
         <h1 css={
             css`
@@ -32,11 +35,10 @@ export const PageTemplate: React.FC<PageProps> = ({
         {main}
     </Page>
 };
+
 export default {
     props: {
         heading: '',
         main: ''
     },
-    includeDocType: true,
-    namespaceBase: [`NJmaeff`,]
 } as PHPMeta<PageProps>

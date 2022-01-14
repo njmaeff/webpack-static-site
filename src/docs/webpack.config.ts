@@ -10,8 +10,10 @@ export default makeConfig(({webpack}) => {
         outputPath: path.join(__dirname, "dist"), // default
         formatter: "js-minify", // default
         pageExtension: ".page.tsx", // default but tsx supported too
-        phpExtension: ".php.tsx", // default but tsx supported too
-        emotionJS: true, // default is false but you can use emotion.js in your code if enabled
+        phpExtension: ".php.tsx", // default but tsx supported too,
+        phpNamespace: "NJmaeff",
+        emotionJS: true, // default is false but you can use emotion.js in your
+                         // code if enabled
         // see webpack copy plugin for full usage
         // https://webpack.js.org/plugins/copy-webpack-plugin/
         copy: {

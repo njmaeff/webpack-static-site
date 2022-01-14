@@ -15,6 +15,7 @@ export interface DefaultConfigTemplateParams {
     formatter?: Formatter;
     pageExtension?: string,
     phpExtension?: string
+    phpNamespace?: string
 }
 
 const defaultConfigTemplate = ({
@@ -25,6 +26,7 @@ const defaultConfigTemplate = ({
                                    formatter = "js-minify",
                                    pageExtension = '.page.tsx',
                                    phpExtension = '.php.tsx',
+                                   phpNamespace = "",
                                }: DefaultConfigTemplateParams = {}) =>
     ({
         entry: {},
@@ -137,6 +139,7 @@ const defaultConfigTemplate = ({
             new HTMLEmitPlugin({
                 pageExtension,
                 phpExtension,
+                phpNamespace,
                 formatter,
                 emotionJS,
                 useStaticTransform: true,

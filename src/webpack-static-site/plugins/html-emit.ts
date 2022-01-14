@@ -184,7 +184,8 @@ export class HTMLEmitPlugin {
             },
             sandbox: {
                 SC_STATIC_ASSET_PATH: assetPath,
-                SC_FORMAT: (src) => formatter(src)
+                SC_FORMAT: (src) => formatter(src),
+                SC_PHP_NAMESPACE: this.options.phpNamespace,
             },
         });
         return vm.run(src, assetPath)
@@ -194,6 +195,7 @@ export class HTMLEmitPlugin {
         private options: {
             pageExtension: string,
             phpExtension: string,
+            phpNamespace: string,
             useStaticTransform: boolean;
             emotionJS: boolean;
             formatter: Formatter;
